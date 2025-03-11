@@ -1,7 +1,3 @@
-/**
- * For more details on how to configure Wrangler, refer to:
- * https://developers.cloudflare.com/workers/wrangler/configuration/
- */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "containers-demo-1",
@@ -18,5 +14,24 @@
         "class_name": "CodeExecutor"
       }
     ]
-  }
+  },
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_classes": [
+				"CodeExecutor"
+			]
+		}
+	],
+	"containers": {
+      "app": [
+        {
+          "configuration": {
+            "image": "registry.cloudchamber.cfdata.org/executor:1.0"
+          },
+          "instances": 5,
+          "name": "code-executor"
+        }
+      ]
+    }
 }
