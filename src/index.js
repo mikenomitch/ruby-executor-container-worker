@@ -1,20 +1,40 @@
-import DurableObject from 'cloudflare:workers';
+import { DurableObject } from 'cloudflare:workers';
 
 export default {
-	async fetch(request, env, ctx) {
+	async fetch(request, env) {
 		const url = new URL(request.url);
-		const restaurantId = url.searchParams.get('restaurant-id');
-		return env.CALL_AGENT.get(restaurantId).fetch(request);
+
+		if (url.pathname.startsWith('/code')) {
+			const body = await request.json();
+
+			const sessionId = body['session-id'];
+			const id = env.CODE_EXECUTOR.idFromName(sessionId);
+			const container = env.CODE_EXECUTOR.get(id);
+			return container.executeCode(body['code']);
+		}
+
+		return env.ASSETS.fetch(request);
 	},
 };
 
 export class CodeExecutor extends DurableObject {
 	constructor(ctx, env) {
 		super(ctx, env);
-		ctx.blockConcurrencyWhile(ctx.container.start);
+
+		// TODO: enable this once the container is up
+		// ctx.blockConcurrencyWhile(ctx.container.start);
 	}
 
-	async fetch(req) {
-		return await this.ctx.container.getTcpPort(4567).fetch(req);
+	async executeCode(code) {
+		// TODO: enable this once the container is up
+		// return await this.ctx.container.getTcpPort(4567).fetch(...);
+
+		return await fetch('http://localhost:4567/code', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ code }),
+		});
 	}
 }
