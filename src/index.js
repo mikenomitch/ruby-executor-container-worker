@@ -1,15 +1,20 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
+import DurableObject from 'cloudflare:workers';
 
 export default {
 	async fetch(request, env, ctx) {
-		return new Response('Hello World!');
+		const url = new URL(request.url);
+		const restaurantId = url.searchParams.get('restaurant-id');
+		return env.CALL_AGENT.get(restaurantId).fetch(request);
 	},
 };
+
+export class CodeExecutor extends DurableObject {
+	constructor(ctx, env) {
+		super(ctx, env);
+		ctx.blockConcurrencyWhile(ctx.container.start);
+	}
+
+	async fetch(req) {
+		return await this.ctx.container.getTcpPort(4567).fetch(req);
+	}
+}
